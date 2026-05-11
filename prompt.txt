@@ -1,0 +1,780 @@
+You are building a production-ready Attendance Management System using Next.js Fullstack, PostgreSQL, Prisma ORM, TypeScript, and Auth.js.
+
+
+
+SYSTEM OVERVIEW
+
+The platform manages attendance for:
+
+1. Admins
+
+2. Lecturers
+
+3. Students
+
+
+
+The system uses:
+
+- QR-code attendance
+
+- Facial verification as second-factor authentication
+
+- Course form upload and extraction
+
+- Role-based dashboards
+
+
+
+--------------------------------------------------
+
+TECH STACK
+
+--------------------------------------------------
+
+
+
+Frontend:
+
+- Next.js App Router
+
+- TypeScript
+
+- TailwindCSS
+
+- shadcn/ui
+
+
+
+Backend:
+
+- Next.js Route Handlers
+
+- Prisma ORM
+
+- PostgreSQL
+
+- Auth.js (JWT strategy)
+
+
+
+Storage:
+
+- Cloudinary for uploads
+
+
+
+Security:
+
+- bcrypt password hashing
+
+- JWT sessions
+
+- facial verification after login
+
+- expiring QR sessions
+
+
+
+--------------------------------------------------
+
+USER MODEL
+
+--------------------------------------------------
+
+
+
+All users must exist under ONE User model.
+
+
+
+Prisma Schema:
+
+
+
+model User {
+
+  id                 String   @id @default(cuid())
+
+  identifier         String   @unique
+
+  email              String?  @unique
+
+  passwordHash       String
+
+  fullName           String
+
+  role               Role
+
+  faceVerified       Boolean  @default(false)
+
+
+
+  matricNumber       String?
+
+  department         String?
+
+
+
+  courseFormUrl      String?
+
+  verificationStatus VerificationStatus @default(PENDING)
+
+
+
+  createdAt          DateTime @default(now())
+
+  updatedAt          DateTime @updatedAt
+
+
+
+  studentCourses     StudentCourse[]
+
+  lecturerCourses    Course[]
+
+
+
+  attendanceRecords  AttendanceRecord[]
+
+  attendanceSessions AttendanceSession[]
+
+}
+
+
+
+enum Role {
+
+  ADMIN
+
+  LECTURER
+
+  STUDENT
+
+}
+
+
+
+enum VerificationStatus {
+
+  PENDING
+
+  VERIFIED
+
+  REJECTED
+
+}
+
+
+
+--------------------------------------------------
+
+COURSE MODEL
+
+--------------------------------------------------
+
+
+
+model Course {
+
+  id          String   @id @default(cuid())
+
+  courseCode  String
+
+  courseTitle String
+
+
+
+  lecturerId  String
+
+  lecturer    User @relation(fields: [lecturerId], references: [id])
+
+
+
+  students    StudentCourse[]
+
+
+
+  sessions    AttendanceSession[]
+
+
+
+  createdAt   DateTime @default(now())
+
+}
+
+
+
+--------------------------------------------------
+
+STUDENT COURSE RELATION
+
+--------------------------------------------------
+
+
+
+model StudentCourse {
+
+  id         String @id @default(cuid())
+
+
+
+  studentId  String
+
+  courseId   String
+
+
+
+  student    User   @relation(fields: [studentId], references: [id])
+
+  course     Course @relation(fields: [courseId], references: [id])
+
+
+
+  @@unique([studentId, courseId])
+
+}
+
+
+
+--------------------------------------------------
+
+ATTENDANCE SESSION MODEL
+
+--------------------------------------------------
+
+
+
+model AttendanceSession {
+
+  id          String   @id @default(cuid())
+
+
+
+  courseId    String
+
+  lecturerId  String
+
+
+
+  qrToken     String   @unique
+
+
+
+  startsAt    DateTime
+
+  expiresAt   DateTime
+
+
+
+  course       Course @relation(fields: [courseId], references: [id])
+
+  lecturer     User   @relation(fields: [lecturerId], references: [id])
+
+
+
+  records      AttendanceRecord[]
+
+
+
+  createdAt    DateTime @default(now())
+
+}
+
+
+
+--------------------------------------------------
+
+ATTENDANCE RECORD MODEL
+
+--------------------------------------------------
+
+
+
+model AttendanceRecord {
+
+  id          String   @id @default(cuid())
+
+
+
+  studentId   String
+
+  sessionId   String
+
+
+
+  scannedAt   DateTime @default(now())
+
+
+
+  student     User @relation(fields: [studentId], references: [id])
+
+  session     AttendanceSession @relation(fields: [sessionId], references: [id])
+
+
+
+  @@unique([studentId, sessionId])
+
+}
+
+
+
+--------------------------------------------------
+
+AUTHENTICATION REQUIREMENTS
+
+--------------------------------------------------
+
+
+
+Signup fields:
+
+
+- email
+
+- password
+
+
+- role (this will be selcted using active tabs in the signup ui not dropdown)
+
+
+for student roles, there will be an onboarding screen where students upload their course forms which is scanned and details like the identifier, courses offered and full name will be gotten from there
+
+
+
+Rules:
+
+1. Students must use school email beginning with "AU"
+
+2. Passwords must be hashed using bcrypt
+
+3. JWT authentication
+
+4. Role-based authorization middleware
+
+5. Students upload course form during onboarding
+
+
+
+Examples:
+
+- AU20230012@augustineuniversity.edu.ng
+
+- Lecturer emails unrestricted
+
+
+
+--------------------------------------------------
+
+STUDENT ONBOARDING FLOW
+
+--------------------------------------------------
+
+
+
+1. Student signs up
+
+2. Uploads course form PDF/image
+
+3. Backend extracts:
+
+   - student name
+
+   - matric number (student identifier)
+
+   - courses
+
+4. Data stored automatically
+
+5. Student completes facial verification (store face on onboarding, then verify face after login)
+
+6. Admin verifies uploaded form
+
+7. Student can begin attendance scanning ( )
+
+
+
+--------------------------------------------------
+
+COURSE FORM EXTRACTION
+
+--------------------------------------------------
+
+
+
+Extract from uploaded course form:
+
+- Full Name
+
+- Matric Number
+
+- Course List
+
+  - Course Code (most important)
+
+  - Course Title
+
+
+
+Use OCR:
+
+- Tesseract.js or Google Vision API
+
+
+
+Automatically:
+
+- create course records if absent
+
+- attach student to courses
+
+
+
+--------------------------------------------------
+
+FACIAL VERIFICATION
+
+--------------------------------------------------
+
+
+
+Use webcam capture.
+
+
+
+Requirements:
+
+- Student uploads face during onboarding
+
+- Face checked on login to prevent logging into another persons account
+
+- Prevent spoofing/basic duplicate validation
+
+
+
+Possible tools:
+
+- face-api.js*
+
+- AWS Rekognition
+
+
+
+--------------------------------------------------
+
+LECTURER ATTENDANCE FLOW
+
+--------------------------------------------------
+
+
+
+Lecturer dashboard must allow:
+
+- selecting course
+
+- creating attendance session
+
+- generating QR code
+
+
+
+QR payload:
+
+- sessionId
+
+- qrToken
+
+- expiresAt
+
+
+
+QR expires automatically after configurable duration.
+
+QR refreshes every 5 minuites
+
+
+
+--------------------------------------------------
+
+STUDENT ATTENDANCE FLOW
+
+--------------------------------------------------
+
+
+
+1. Student logs in
+
+2. Facial verification runs
+
+3. Student scans QR
+
+4. Backend validates:
+
+   - valid session
+
+   - correct course registration
+
+   - QR not expired
+
+   - no duplicate attendance
+
+   - authenticated user
+
+5. Attendance saved with timestamp
+
+
+
+--------------------------------------------------
+
+ADMIN FEATURES
+
+--------------------------------------------------
+
+
+
+Admin dashboard should include:
+
+- verify students
+
+- approve/reject course forms
+
+- manage lecturers
+
+- assign lecturers to courses
+
+- attendance analytics
+
+- export attendance reports
+
+
+
+--------------------------------------------------
+
+LECTURER FEATURES
+
+--------------------------------------------------
+
+
+
+Lecturer dashboard:
+
+- create attendance session
+
+- generate QR
+
+- monitor live attendance
+
+- export attendance CSV/PDF
+
+- session auto-close
+
+
+
+--------------------------------------------------
+
+STUDENT FEATURES
+
+--------------------------------------------------
+
+
+
+Student dashboard:
+
+- attendance history
+
+- attendance percentage
+
+- registered courses
+
+- profile management
+
+
+
+
+
+--------------------------------------------------
+
+API STRUCTURE
+
+--------------------------------------------------
+
+
+
+Build REST/route handlers for:
+
+- auth/signup
+
+- auth/login
+
+- upload/course-form
+
+- face/verify
+
+- attendance/create-session
+
+- attendance/scan
+
+- attendance/history
+
+- admin/verify-student
+
+
+
+--------------------------------------------------
+
+UI REQUIREMENTS
+
+--------------------------------------------------
+
+
+
+Use:
+
+- responsive dashboard layout
+
+- sidebar navigation
+
+- role-based routing
+
+- production ready black and white theme
+
+- tab-based role selector on signup
+
+- QR scanner component
+
+- webcam modal for face verification
+
+
+
+--------------------------------------------------
+
+IMPORTANT SECURITY RULES
+
+--------------------------------------------------
+
+
+
+NEVER trust frontend data directly.
+
+
+
+Always validate:
+
+- JWT
+
+- role
+
+- QR expiration
+
+- student-course relationship
+
+- duplicate attendance
+
+
+
+Implement:
+
+- server-side validation
+
+- rate limiting
+
+- secure uploads
+
+- protected routes
+
+
+
+--------------------------------------------------
+
+PROJECT STRUCTURE
+
+--------------------------------------------------
+
+
+
+Organize:
+
+- app/
+
+- components/
+
+- lib/
+
+- prisma/
+
+- services/
+
+- hooks/
+
+- actions/
+
+- types/
+
+
+
+Use:
+
+- reusable server actions
+
+- clean architecture
+
+- modular services
+
+- scalable folder structure
+
+
+
+--------------------------------------------------
+
+GOAL
+
+--------------------------------------------------
+
+
+
+Build a scalable university attendance system with:
+
+- secure authentication
+
+- automated student onboarding
+
+- QR attendance
+
+- facial verification
+
+- attendance analytics
+
+- role-based dashboards
+
+
+
+
+
+Phase 1: Foundation (The Skeleton)
+
+Initialize Next.js, Tailwind, shadcn/ui.
+
+Setup PostgreSQL and push the Prisma schema.
+
+Configure Auth.js (Credentials provider + bcrypt) and create the basic Login/Signup UI with the Role tabs.
+
+Phase 2: The Student Onboarding Pipeline (The Heaviest Lift)
+
+Integrate Cloudinary for document uploads.
+
+Set up the OCR pipeline to parse the uploaded course form and automatically populate the Course and StudentCourse tables.
+
+Implement @vladmandic/face-api to capture the student's face descriptors and save them to the User record.
+
+Phase 3: The Attendance Engine
+
+Build the Lecturer QR generation component (with 5-minute auto-refresh logic).
+
+Build the Student QR Scanner component.
+
+Create the Server Action for logging attendance that validates location, time, session validity, and duplicates.
+
+Phase 4: Dashboards & Analytics
+
+Build out the Admin layout to verify students.
+
+Create attendance charts and export-to-CSV functionality.
