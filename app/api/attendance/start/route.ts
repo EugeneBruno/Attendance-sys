@@ -37,9 +37,17 @@ export async function POST(req: Request) {
       );
     }
 
-    const duration = Number(durationMinutes || 1);
 
-    if (duration < 1 || duration > 30) {
+    if (!durationMinutes){
+      return NextResponse.json(
+        { message: "Duration is required" },
+        { status: 400 }
+      );
+    }
+
+    const duration = Number(durationMinutes);
+
+    if (!Number.isInteger(duration) || duration < 1 || duration > 30) {
       return NextResponse.json(
         { message: "Duration must be between 1 and 30 minutes" },
         { status: 400 }
