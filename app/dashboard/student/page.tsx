@@ -9,7 +9,8 @@ export default async function StudentDashboard() {
   // 1. Authenticate & Protect Route
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
-  if (session.user.role !== 'STUDENT') redirect('/dashboard/admin');
+  const userRole = (session.user as { role?: string })?.role;
+  if (userRole !== 'STUDENT') redirect('/dashboard/admin');
 
   // 2. Fetch Student Data & Enrolled Courses
   const student = await prisma.user.findUnique({
@@ -78,7 +79,7 @@ export default async function StudentDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
-              Welcome back, {student.name?.split(' ')[0] || 'Student'}
+              Welcome back, {student.fullName?.split(' ')[0] || 'Student'}
             </h1>
             <p className="text-zinc-500 mt-1">
               Matric No: <span className="font-medium text-zinc-700">{student.identifier}</span>
