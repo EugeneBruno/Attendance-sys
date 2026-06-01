@@ -5,7 +5,6 @@ import prisma from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import cloudinary from "@/lib/cloudinary"
 import Tesseract from "tesseract.js"
-
 export async function processCourseForm(formData: FormData) {
   try {
     const session = await auth();
@@ -107,22 +106,22 @@ export async function processCourseForm(formData: FormData) {
 // Add this to the bottom of actions/onboarding.actions.ts
 
 // 2. Process Face Capture (Mock version until we wire up face-api)
-export async function verifyAndSaveFace(imageBase64: string) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+// export async function verifyAndSaveFace(imageBase64: string) {
+//   try {
+//     const session = await auth();
+//     if (!session?.user?.id) throw new Error("Unauthorized");
 
-    // Simulate AI processing delay for the UI
-    await new Promise((resolve) => setTimeout(resolve, 1500)); 
+//     // Simulate AI processing delay for the UI
+//     await new Promise((resolve) => setTimeout(resolve, 1500)); 
 
-    // Update user in DB to allow them into the dashboard
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { faceVerified: true }
-    });
+//     // Update user in DB to allow them into the dashboard
+//     await prisma.user.update({
+//       where: { id: session.user.id },
+//       data: { faceVerified: true }
+//     });
 
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message };
-  }
-}
+//     return { success: true };
+//   } catch (error: any) {
+//     return { error: error.message };
+//   }
+// }

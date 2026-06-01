@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  
   url      = env("DATABASE_URL")
 }
 
@@ -15,7 +16,7 @@ model User {
   passwordHash       String
   fullName           String
   role               Role
-  faceVerified       Boolean            @default(false)
+  // faceVerified       Boolean            @default(false) 
 
   matricNumber       String?
   department         String?
