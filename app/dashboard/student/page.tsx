@@ -13,7 +13,8 @@ export default async function StudentDashboard() {
   // ------------------------------
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
-  if (session.user.role !== 'STUDENT') redirect('/dashboard/admin');
+  const userRole = (session.user as { role?: string })?.role;
+  if (userRole !== 'STUDENT') redirect('/dashboard/admin');
 
   // ------------------------------
   // 2. Data Fetching
