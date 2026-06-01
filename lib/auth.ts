@@ -39,7 +39,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
-        token.faceVerified = (user as any).faceVerified;
       }
       return token;
     },
@@ -47,7 +46,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
-        session.user.faceVerified = token.faceVerified as boolean;
       }
       return session;
     }

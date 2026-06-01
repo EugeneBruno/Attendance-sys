@@ -8,10 +8,10 @@ export async function registerUser(data: any) {
   try {
     const { name, email, password, role, matricNumber } = data;
 
-    // 1. Determine the unique identifier (Matric No for students, Email for others)
+    //set identifier based on role
     const identifier = role === 'STUDENT' ? matricNumber : email;
 
-    // 2. Check if user already exists
+    // Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
@@ -25,10 +25,10 @@ export async function registerUser(data: any) {
       return { error: "A user with this email or matriculation number already exists." };
     }
 
-    // 3. Hash the password
+    //  Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 4. Save to Database
+    //  Save to Database
     const newUser = await prisma.user.create({
       data: {
         fullName: name,
