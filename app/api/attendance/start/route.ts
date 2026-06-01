@@ -84,11 +84,36 @@ export async function POST(req: Request) {
       },
     });
 
+    
+
+    const activeSession = await prisma.attendanceSession.findFirst({
+      where: {
+        courseId,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (activeSession) {
+      return NextResponse.json(
+        {
+          message: "An attendance session is already active for this course",
+          activeSession: {
+            id: activeSession.id,
+            courseId: activeSession.courseId,
+            startsAt: activeSession.startsAt,
+            expiresAt: activeSession.expiresAt,
+          },
+        },
+        { status: 409 }
+      );
+    }
+
     const qrToken = crypto.randomBytes(32).toString("hex");
 
     const startsAt = new Date();
     const expiresAt = new Date(Date.now() + duration * 60 * 1000);
-
     const attendanceSession = await prisma.attendanceSession.create({
       data: {
         courseId,
