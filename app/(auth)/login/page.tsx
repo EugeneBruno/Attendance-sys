@@ -40,7 +40,7 @@ export default function LoginPage() {
         throw new Error('Failed to retrieve user session.');
       }
 
-      const { role, faceVerified } = session.user as any;
+      const { role, courseFormUrl } = session.user as any;
 
       // Smart Routing Based on Role & Status
       if (role === 'ADMIN') {
@@ -49,13 +49,14 @@ export default function LoginPage() {
         router.push('/dashboard/lecturer');
       } else if (role === 'STUDENT') {
         // Force onboarding if they haven't uploaded face/forms
-        if (!faceVerified) {
-          router.push('/onboarding');
-        } else {
-          // Normal flow: verify face via webcam before entering dashboard
-          // We will build this intermediate face-check step later
-          router.push('/dashboard/student'); 
-        }
+        // if (courseFormUrl === 'NULL') {
+        //   router.push('/onboarding');
+        // } else {
+        //   // Normal flow: verify face via webcam before entering dashboard
+        //   // We will build this intermediate face-check step later
+        //   router.push('/dashboard/student'); 
+        // }
+        router.push('/dashboard/student');
       }
 
     } catch (err: any) {
@@ -137,6 +138,7 @@ export default function LoginPage() {
                   Forgot password?
                 </a>
               </div>
+              {/* TODO: add an eye icon to view the password */}
               <input 
                 type="password" 
                 required

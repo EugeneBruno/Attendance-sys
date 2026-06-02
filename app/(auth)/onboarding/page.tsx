@@ -4,7 +4,8 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Webcam from 'react-webcam';
-import { processCourseForm, verifyAndSaveFace } from '@/actions/onboarding.actions';
+// import { processCourseForm, verifyAndSaveFace } from '@/actions/onboarding.actions';
+import {processCourseForm} from '@/actions/onboarding.actions'
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -36,32 +37,35 @@ export default function OnboardingPage() {
       setExtractedCourses(result.courses || []);
       setStep(2); // Move to Face Scan
       setIsProcessing(false);
-    }
-  };
-
-  // Step 2: Handle Face Capture
-  const captureFace = useCallback(async () => {
-    const imageSrc = webcamRef.current?.getScreenshot();
-    if (!imageSrc) return setError("Failed to capture image. Check camera permissions.");
-
-    setIsProcessing(true);
-    setError('');
-
-    const result = await verifyAndSaveFace(imageSrc);
-
-    if (result.error) {
-      setError(result.error);
-      setIsProcessing(false);
-    } else {
-      setStep(3); // Move to Success
-      setIsProcessing(false);
-      
-      // Auto-redirect to dashboard after 2 seconds
       setTimeout(() => {
         router.push('/dashboard/student');
       }, 2000);
     }
-  }, [webcamRef, router]);
+  };
+
+  // Step 2: Handle Face Capture
+  // const captureFace = useCallback(async () => {
+  //   const imageSrc = webcamRef.current?.getScreenshot();
+  //   if (!imageSrc) return setError("Failed to capture image. Check camera permissions.");
+
+  //   setIsProcessing(true);
+  //   setError('');
+
+  //   const result = await verifyAndSaveFace(imageSrc);
+
+  //   if (result.error) {
+  //     setError(result.error);
+  //     setIsProcessing(false);
+  //   } else {
+  //     setStep(3); // Move to Success
+  //     setIsProcessing(false);
+      
+  //     // Auto-redirect to dashboard after 2 seconds
+  //     setTimeout(() => {
+  //       router.push('/dashboard/student');
+  //     }, 2000);
+  //   }
+  // }, [webcamRef, router]);
 
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-4 font-sans text-zinc-900">
@@ -121,11 +125,11 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* STEP 2: Face Verification */}
+        {/*
         {step === 2 && (
           <div className="space-y-6 flex flex-col items-center animate-in fade-in slide-in-from-right-8 duration-500">
             
-            {/* Show OCR Results briefly */}
+            
             <div className="w-full bg-zinc-100 p-4 rounded-lg flex items-center justify-between">
               <span className="text-sm font-medium text-green-700">✓ Found {extractedCourses.length} courses</span>
               <span className="text-xs text-zinc-500">Continuing to biometric check...</span>
@@ -139,9 +143,10 @@ export default function OnboardingPage() {
                 videoConstraints={{ width: 300, height: 300, facingMode: "user" }}
                 className="object-cover w-full h-full"
               />
-              {/* Target Overlay */}
+              
               <div className="absolute inset-0 border-[8px] border-dashed border-white/30 rounded-full animate-[spin_10s_linear_infinite]" />
             </div>
+
 
             <button 
               onClick={captureFace}
@@ -152,9 +157,10 @@ export default function OnboardingPage() {
             </button>
           </div>
         )}
+         */}
 
         {/* STEP 3: Success */}
-        {step === 3 && (
+        {step === 2 && (
           <div className="flex flex-col items-center py-12 animate-in zoom-in-95 duration-500">
             <div className="h-20 w-20 bg-black text-white rounded-full flex items-center justify-center mb-6 shadow-lg">
               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,6 +171,7 @@ export default function OnboardingPage() {
             <p className="text-zinc-500 mt-2">Your course form is pending admin review. You are ready to log attendance.</p>
           </div>
         )}
+        
 
       </div>
     </div>

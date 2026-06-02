@@ -1,8 +1,10 @@
 // app/dashboard/student/layout.tsx
+//valerius' group
 import React, { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import BottomNav from '@/components/dashboard/BottomNav';
+import prisma from '@/lib/prisma';
 
 export default async function StudentDashboardLayout({
   children,
@@ -11,6 +13,18 @@ export default async function StudentDashboardLayout({
 }) {
   const session = await auth();
   if (!session?.user) redirect('/login');
+  const student = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        studentCourses: {
+          include: {
+            course: true,
+          }
+        }
+      }
+    });
+
+  if (!student) redirect('/login');
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 flex flex-col">
@@ -21,10 +35,13 @@ export default async function StudentDashboardLayout({
           <div className="h-7 w-7 bg-black rounded flex items-center justify-center text-white font-bold text-xs">
             AU
           </div>
-          <span className="font-semibold text-zinc-900 tracking-tight">AttendanceOS</span>
+          <span className="font-semibold text-zinc-900 tracking-tight">Attendance-SYS</span>
         </div>
+
+        <span className="text-zinc-500 hidden sm:inline-block">{student.email || 'auxxx@augustine.com'}</span>
         <div className="h-8 w-8 rounded-full bg-zinc-200 border border-zinc-300 flex items-center justify-center overflow-hidden">
-            {/* Placeholder for student avatar */}
+            
+            
             <svg className="w-5 h-5 text-zinc-500" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
           </svg>
