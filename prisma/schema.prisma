@@ -51,18 +51,17 @@ enum VerificationStatus {
 
 model Course {
   id          String   @id @default(cuid())
-  courseCode  String
+  courseCode  String   @unique
   courseTitle String
 
-  lecturerId  String
-  lecturer    User     @relation(fields: [lecturerId], references: [id])
+  lecturerId  String?
+  lecturer    User?    @relation(fields: [lecturerId], references: [id])
 
   students    StudentCourse[]
   sessions    AttendanceSession[]
 
   createdAt   DateTime @default(now())
 }
-
 // --------------------------------------------------
 // STUDENT COURSE RELATION
 // --------------------------------------------------

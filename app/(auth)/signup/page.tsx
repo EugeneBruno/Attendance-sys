@@ -1,7 +1,7 @@
 // app/(auth)/signup/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { registerUser } from '@/actions/auth.actions';
@@ -15,6 +15,8 @@ export default function Signup() {
   const [email, setEmail] = useState('');
   const [matricNumber, setMatricNumber] = useState('');
   const [password, setPassword] = useState('');
+  const [courses, setCourses] = useState<any[]>([]);
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
 
   // Network State
   const [isSubmitting, setIsSubmitting] = useState(false);
