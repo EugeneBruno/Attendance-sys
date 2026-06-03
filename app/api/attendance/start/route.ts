@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const user = sessionUser.user as {
       id: string;
       role: string;
-      faceVerified?: boolean;
+      // faceVerified?: boolean;
     };
 
     if (user.role !== "LECTURER" && user.role !== "ADMIN") {

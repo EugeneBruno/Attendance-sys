@@ -52,7 +52,7 @@ enum VerificationStatus {
 
 model Course {
   id          String   @id @default(cuid())
-  courseCode  String
+  courseCode  String   @unique
   courseTitle String
 
   lecturerId  String
@@ -74,8 +74,8 @@ model StudentCourse {
   studentId String
   courseId  String
 
-  student   User   @relation(fields: [studentId], references: [id])
-  course    Course @relation(fields: [courseId], references: [id])
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, courseId])
 }
@@ -95,8 +95,8 @@ model AttendanceSession {
   startsAt   DateTime
   expiresAt  DateTime
 
-  course     Course             @relation(fields: [courseId], references: [id])
-  lecturer   User               @relation(fields: [lecturerId], references: [id])
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lecturer   User     @relation(fields: [lecturerId], references: [id], onDelete: Cascade)
 
   records    AttendanceRecord[]
 
@@ -115,8 +115,8 @@ model AttendanceRecord {
 
   scannedAt DateTime @default(now())
 
-  student   User              @relation(fields: [studentId], references: [id])
-  session   AttendanceSession @relation(fields: [sessionId], references: [id])
+  student   User              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session   AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, sessionId])
 }

@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export default async function StudentDashboard() {
   // ------------------------------
   // 1. Authentication & Protection
@@ -29,6 +31,15 @@ export default async function StudentDashboard() {
             course: true,
           },
         },
+        attendanceRecords: {
+          select: {
+            session: {
+              select: {
+                courseId: true,
+              }
+            }
+          }
+        }
       },
     }),
     prisma.attendanceSession.findFirst({
@@ -62,11 +73,22 @@ export default async function StudentDashboard() {
   // 3. Course Statistics (Mock Data)
   // ------------------------------
   const TOTAL_CLASSES = 14;
+  let totalClassesAttended = 0
 
   const coursesWithStats = student.studentCourses.map((sc) => {
-    // TODO: replace with actual attendance count from the database
-    const attended = Math.floor(Math.random() * 11) + 4;
-    const percentage = Math.round((attended / TOTAL_CLASSES) * 100);
+    
+    // 1. Calculate actual attendance by filtering the records for this specific course
+    const attended = student.attendanceRecords.filter(
+      (record) => record.session.courseId === sc.course.id
+    ).length;
+    
+    totalClassesAttended += attended;
+    
+    // 2. Calculate percentage (safeguard against NaN just in case)
+    const percentage = TOTAL_CLASSES > 0 
+      ? Math.round((attended / TOTAL_CLASSES) * 100) 
+      : 0;
+      
     const isAtRisk = percentage < 75;
 
     return {
@@ -78,6 +100,10 @@ export default async function StudentDashboard() {
       isAtRisk,
     };
   });
+
+  const overallAttendance = student.studentCourses.length > 0 
+    ? Math.round((totalClassesAttended / (student.studentCourses.length * TOTAL_CLASSES)) * 100)
+    : 0;
 
   // aggregate stats
   const totalCourses = coursesWithStats.length;
@@ -106,7 +132,7 @@ export default async function StudentDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">
-                Welcome back, {student.name?.split(' ')[0] || 'Student'}
+                Welcome back, {student.fullName?.split(' ')[0] || 'Student'}
               </h1>
               <p className="text-slate-500 mt-1">
                 Matric No: <span className="font-medium text-slate-700">{student.identifier}</span>
@@ -239,7 +265,7 @@ export default async function StudentDashboard() {
                       {activeSession.course.courseCode}
                     </h2>
                     <p className="text-sm text-slate-500 mb-4">
-                      {activeSession.course.courseTitle}
+                      {activeSession.course.courseTitle || '-'}
                     </p>
                     <div className="space-y-3 text-sm">
                       <div className="flex justify-between">
