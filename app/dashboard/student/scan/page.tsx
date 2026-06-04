@@ -7,13 +7,32 @@ import { useRouter } from "next/navigation";
 export default function StudentScanPage() {
   const router = useRouter();
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const hasScannedRef = useRef(false);
 
   const [message, setMessage] = useState("");
   const [isScanning, setIsScanning] = useState(false);
-  const [hasScanned, setHasScanned] = useState(false);
   const [manualToken, setManualToken] = useState("");
 
+  async function stopScanner() {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        await scannerRef.current.clear();
+      } catch (error) {
+        console.log("Scanner already stopped", error);
+      } finally {
+        scannerRef.current = null;
+        setIsScanning(false);
+      }
+    }
+  }
+
   async function markAttendance(qrToken: string) {
+    if (!qrToken) {
+      setMessage("QR token is required.");
+      return;
+    }
+
     try {
       setMessage("Marking attendance...");
 
@@ -34,8 +53,6 @@ export default function StudentScanPage() {
 
       setMessage("Attendance marked successfully");
 
-      await stopScanner();
-
       setTimeout(() => {
         router.push("/dashboard/student");
       }, 1200);
@@ -48,31 +65,36 @@ export default function StudentScanPage() {
   async function startScanner() {
     if (isScanning) return;
 
+    hasScannedRef.current = false;
+
     const scanner = new Html5Qrcode("qr-reader");
     scannerRef.current = scanner;
 
     setIsScanning(true);
     setMessage("Scanning...");
 
-    await scanner.start(
-      { facingMode: "environment" },
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-      },
-      async (decodedText) => {
-        await markAttendance(decodedText);
-      },
-      () => {}
-    );
-  }
+    try {
+      await scanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        async (decodedText) => {
+          if (hasScannedRef.current) return;
 
-  async function stopScanner() {
-    if (scannerRef.current && isScanning) {
-      await scannerRef.current.stop();
-      await scannerRef.current.clear();
-      scannerRef.current = null;
+          hasScannedRef.current = true;
+
+          await stopScanner();
+          await markAttendance(decodedText);
+        },
+        () => {}
+      );
+    } catch (error) {
+      console.error(error);
+      setMessage("Camera could not start. Use the manual token option.");
       setIsScanning(false);
+      scannerRef.current = null;
     }
   }
 
@@ -131,7 +153,11 @@ export default function StudentScanPage() {
           />
 
           <button
-            onClick={() => markAttendance(manualToken.trim())}
+            onClick={async () => {
+              hasScannedRef.current = true;
+              await stopScanner();
+              await markAttendance(manualToken.trim());
+            }}
             className="w-full bg-green-600 text-white rounded-lg py-3 text-sm font-medium"
           >
             Submit Token
