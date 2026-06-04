@@ -106,7 +106,7 @@ export default async function StudentDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">
-                Welcome back, {student.name?.split(' ')[0] || 'Student'}
+                Welcome back, {student.fullName?.split(' ')[0] || 'Student'}
               </h1>
               <p className="text-slate-500 mt-1">
                 Matric No: <span className="font-medium text-slate-700">{student.identifier}</span>

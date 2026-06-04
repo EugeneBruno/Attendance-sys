@@ -56,7 +56,6 @@ export async function registerUser(data: any) {
           passwordHash: hashedPassword,
           role,
           matricNumber: role === "STUDENT" ? matricNumber : null,
-          faceVerified: true,
           verificationStatus: "VERIFIED",
         },
       });

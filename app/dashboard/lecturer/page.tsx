@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
+import { QRCodeCanvas } from "qrcode.react";
 
 type Course = {
   id: string;
@@ -16,6 +17,7 @@ export default function LecturerDashboard() {
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [durationMinutes, setDurationMinutes] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [qrToken, setQrToken] = useState("");
 
   async function fetchCourses() {
     try {
@@ -106,6 +108,7 @@ export default function LecturerDashboard() {
         alert(
           `Attendance Started!\n\nQR Token:\n${data.session.qrToken}\n\nExpires:\n${data.session.expiresAt}`
         );
+        setQrToken(data.session.qrToken);
       } else {
         alert(data.message || "Failed to start attendance");
       }
@@ -206,6 +209,18 @@ export default function LecturerDashboard() {
           >
             Start Attendance
           </button>
+
+          {qrToken && (
+            <div className="bg-white p-6 rounded shadow text-center space-y-4">
+              <h2 className="text-xl font-semibold">Attendance QR Code</h2>
+
+              <div className="flex justify-center">
+                <QRCodeCanvas value={qrToken} size={250} />
+              </div>
+
+              <p className="text-xs break-all text-zinc-500">{qrToken}</p>
+            </div>
+          )}
         </section>
       </div>
     </main>
