@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
 import { QRCodeCanvas } from "qrcode.react";
 
@@ -45,17 +45,22 @@ export default function LecturerDashboard() {
   const [summary, setSummary] = useState<CourseSummary | null>(null);
   const [durationMinutes, setDurationMinutes] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
+
+  const isFetchingSummaryRef = useRef(false);
 
   async function fetchCourses() {
     try {
-      const res = await fetch("/api/courses");
+      const res = await fetch("/api/courses", { cache: "no-store" });
       const data = await res.json();
 
       if (res.ok) {
-        setCourses(data.courses || []);
+        const lecturerCourses = data.courses || [];
+        setCourses(lecturerCourses);
 
-        if (data.courses?.length > 0 && !selectedCourseId) {
-          setSelectedCourseId(data.courses[0].id);
+        if (lecturerCourses.length > 0 && !selectedCourseId) {
+          setSelectedCourseId(lecturerCourses[0].id);
         }
       } else {
         alert(data.message || "Failed to fetch courses");
@@ -66,21 +71,40 @@ export default function LecturerDashboard() {
     }
   }
 
-  async function fetchCourseSummary(courseId: string) {
-    if (!courseId) return;
+  async function fetchCourseSummary(courseId: string, showLoader = false) {
+    if (!courseId || isFetchingSummaryRef.current) return;
 
     try {
-      const res = await fetch(`/api/lecturer/courses/${courseId}/summary`);
+      isFetchingSummaryRef.current = true;
+      setSummaryError("");
+
+      if (showLoader) {
+        setSummaryLoading(true);
+      }
+
+      const res = await fetch(`/api/lecturer/courses/${courseId}/summary`, {
+        cache: "no-store",
+      });
+
+      const contentType = res.headers.get("content-type");
+
+      if (!contentType?.includes("application/json")) {
+        throw new Error("Summary API returned an invalid response.");
+      }
+
       const data = await res.json();
 
       if (res.ok) {
         setSummary(data);
       } else {
-        alert(data.message || "Failed to fetch course summary");
+        setSummaryError(data.message || "Failed to fetch course summary");
       }
     } catch (error) {
       console.error(error);
-      alert("Error fetching course summary");
+      setSummaryError("Error fetching course summary");
+    } finally {
+      isFetchingSummaryRef.current = false;
+      setSummaryLoading(false);
     }
   }
 
@@ -89,9 +113,16 @@ export default function LecturerDashboard() {
   }, []);
 
   useEffect(() => {
-    if (selectedCourseId) {
+    if (!selectedCourseId) return;
+
+    setSummary(null);
+    fetchCourseSummary(selectedCourseId, true);
+
+    const interval = setInterval(() => {
       fetchCourseSummary(selectedCourseId);
-    }
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [selectedCourseId]);
 
   async function startAttendance() {
@@ -122,7 +153,7 @@ export default function LecturerDashboard() {
       const data = await res.json();
 
       if (res.ok) {
-        await fetchCourseSummary(selectedCourseId);
+        await fetchCourseSummary(selectedCourseId, true);
         alert("Attendance started successfully");
       } else {
         alert(data.message || "Failed to start attendance");
@@ -130,9 +161,9 @@ export default function LecturerDashboard() {
     } catch (error) {
       console.error(error);
       alert("Error starting attendance");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   async function endAttendance() {
@@ -157,7 +188,7 @@ export default function LecturerDashboard() {
       const data = await res.json();
 
       if (res.ok) {
-        await fetchCourseSummary(selectedCourseId);
+        await fetchCourseSummary(selectedCourseId, true);
         alert("Attendance ended successfully");
       } else {
         alert(data.message || "Failed to end attendance");
@@ -165,9 +196,9 @@ export default function LecturerDashboard() {
     } catch (error) {
       console.error(error);
       alert("Error ending attendance");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (
@@ -218,6 +249,26 @@ export default function LecturerDashboard() {
             </div>
           )}
         </section>
+
+        {summaryLoading && (
+          <section className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-pulse">
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"
+              >
+                <div className="h-4 w-24 bg-slate-200 rounded" />
+                <div className="h-8 w-16 bg-slate-200 rounded mt-4" />
+              </div>
+            ))}
+          </section>
+        )}
+
+        {summaryError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+            {summaryError}
+          </div>
+        )}
 
         {summary && (
           <>
