@@ -33,6 +33,22 @@ export default function StudentScanPage() {
       return;
     }
 
+    const position = await new Promise<GeolocationPosition>(
+      (resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          reject,
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+          }
+        );
+      }
+    );
+
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+
     try {
       setMessage("Marking attendance...");
 
@@ -41,7 +57,7 @@ export default function StudentScanPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ qrToken }),
+        body: JSON.stringify({ qrToken, latitude, longitude, }),
       });
 
       const data = await res.json();

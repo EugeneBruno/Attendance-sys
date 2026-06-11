@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { courseId, durationMinutes } = body;
+    const { courseId, durationMinutes, latitude, longitude, } = body;
 
     if (!courseId) {
       return NextResponse.json(
@@ -122,6 +122,8 @@ export async function POST(req: Request) {
         qrToken,
         startsAt,
         expiresAt,
+        latitude,
+        longitude,
       },
     });
 

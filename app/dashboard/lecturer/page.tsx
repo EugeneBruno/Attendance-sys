@@ -50,6 +50,8 @@ export default function LecturerDashboard() {
 
   const isFetchingSummaryRef = useRef(false);
 
+  
+
   async function fetchCourses() {
     try {
       const res = await fetch("/api/courses", { cache: "no-store" });
@@ -126,6 +128,22 @@ export default function LecturerDashboard() {
   }, [selectedCourseId]);
 
   async function startAttendance() {
+    const position = await new Promise<GeolocationPosition>(
+      (resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          reject,
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+          }
+        );
+      }
+    );
+
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    
     if (!selectedCourseId) {
       alert("Select a course first");
       return;
@@ -147,6 +165,8 @@ export default function LecturerDashboard() {
         body: JSON.stringify({
           courseId: selectedCourseId,
           durationMinutes,
+          latitude,
+          longitude,
         }),
       });
 

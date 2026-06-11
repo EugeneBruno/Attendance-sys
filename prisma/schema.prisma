@@ -94,6 +94,9 @@ model AttendanceSession {
   startsAt   DateTime
   expiresAt  DateTime
 
+  latitude   Float?
+  longitude  Float?
+
   course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lecturer   User     @relation(fields: [lecturerId], references: [id], onDelete: Cascade)
 

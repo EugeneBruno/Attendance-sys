@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { getDistance } from "geolib";
 
 export async function POST(req: Request) {
   try {
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { qrToken } = await req.json();
+    const { qrToken, latitude, longitude, } = await req.json();
 
     if (!qrToken) {
       return NextResponse.json(
@@ -50,6 +51,26 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { message: "QR code has expired" },
         { status: 410 }
+      );
+    }
+    const distance = getDistance(
+      {
+        latitude,
+        longitude,
+      },
+      {
+        latitude: attendanceSession.latitude!,
+        longitude: attendanceSession.longitude!,
+      }
+    );
+
+    if (distance > 50) {
+      return NextResponse.json(
+        {
+          message:
+            "You must be within 50 meters of the lecture venue to mark attendance.",
+        },
+        { status: 403 }
       );
     }
 
